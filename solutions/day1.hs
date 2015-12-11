@@ -21,6 +21,8 @@ For example:
 To what floor do the instructions take Santa?
 -}
 
+
+-- Part one 
 findFloor :: [Char] -> Int
 findFloor directions = parseElements directions 0
 	where 
@@ -29,4 +31,29 @@ findFloor directions = parseElements directions 0
 		parseElements (x:xs) floor
 			| x == '(' = parseElements xs (floor+1)
 			| x == ')' = parseElements xs (floor-1)
+			| otherwise = error ("Invalid element: " ++ (show x))
+
+
+{-
+ - --- Part Two ---
+
+Now, given the same instructions, find the position of the first character that causes him to enter the basement (floor -1). 
+The first character in the instructions has position 1, the second character has position 2, and so on.
+
+For example:
+
+) causes him to enter the basement at character position 1.
+()()) causes him to enter the basement at character position 5.
+
+What is the position of the character that causes Santa to first enter the basement?
+-}
+findBasementEntryPosition :: [Char] -> Int
+findBasementEntryPosition directions = findPosition directions 0 1
+	where 
+		findPosition :: [Char] -> Int -> Int -> Int
+		findPosition [] floor position = error ("Santa never enters the basement")
+		findPosition (x:xs) floor position
+			| x == ')' && floor == 0 = position
+			| x == '(' = findPosition xs (floor+1) (position+1)
+			| x == ')' = findPosition xs (floor-1) (position+1)
 			| otherwise = error ("Invalid element: " ++ (show x))
