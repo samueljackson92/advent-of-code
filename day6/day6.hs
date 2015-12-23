@@ -54,21 +54,33 @@ main = do
     args <- getArgs
     content <- readFile (args !! 0)
     let 
-        tree = makeTree (1000, 1000) OFF
-    putStrLn . show . countLightsOn . processInstructions tree . map parseInstruction . lines $ content
+        tree = makeTree (1000, 1000) 0
+    putStrLn . show . totalBrightness . processInstructions tree . map parseInstruction . lines $ content
+
+
+totalBrightness :: QuadTree Int -> Int
+totalBrightness = sum . filterTree  (>0)
 
 countLightsOn :: QuadTree Light -> Int
 countLightsOn = length . filterTree (==ON) 
 
-processInstructions :: QuadTree Light -> [Instruction] -> QuadTree Light
+processInstructions :: QuadTree Int -> [Instruction] -> QuadTree Int
 processInstructions t xs = foldl processInstruction t xs
 
-processInstruction :: QuadTree Light -> Instruction -> QuadTree Light
+processInstruction :: QuadTree Int -> Instruction -> QuadTree Int
 processInstruction t (Instruction command range)
-    | command == "turn on"  = turnRegionOn range t
-    | command == "turn off" = turnRegionOff range t
-    | command == "toggle"   = toggleRegion range t
+    | command == "turn on"  = increaseBrightness 1 range t
+    | command == "turn off" = increaseBrightness (-1) range t
+    | command == "toggle"   = increaseBrightness 2 range t
     | otherwise = error "Malformed Command"
+
+increaseBrightness :: Int -> Region -> QuadTree Int -> QuadTree Int
+increaseBrightness b range t = applyToRegion range (\tree x -> mapLocation x (increment b) tree) t
+    where
+        increment :: Int -> Int -> Int
+        increment b x
+            | x == 0 && b < 0 = 0
+            | otherwise       = x+b
 
 turnRegionOn :: Region -> QuadTree Light -> QuadTree Light
 turnRegionOn range t = applyToRegion range turnOn t   
@@ -89,7 +101,7 @@ turnOn t index = setLocation index ON t
 turnOff :: QuadTree Light -> Location -> QuadTree Light
 turnOff t index = setLocation index OFF t
 
-applyToRegion :: Region -> (QuadTree a -> Location -> QuadTree a) ->  QuadTree a -> QuadTree a
+applyToRegion :: Region -> (QuadTree a -> Location -> QuadTree a) -> QuadTree a -> QuadTree a
 applyToRegion region f t = foldl f t (indicies region)
    where
         indicies :: Region -> [Location]
